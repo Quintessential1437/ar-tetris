@@ -1,5 +1,3 @@
-// AR Tetris - Wall Version
-
 const renderer = new THREE.WebGLRenderer({
   antialias: true,
   alpha: true
@@ -7,10 +5,14 @@ const renderer = new THREE.WebGLRenderer({
 
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
+
 renderer.domElement.style.position = "fixed";
 renderer.domElement.style.left = "0";
 renderer.domElement.style.top = "0";
+renderer.domElement.style.width = "100%";
+renderer.domElement.style.height = "100%";
 renderer.domElement.style.zIndex = "0";
+renderer.domElement.style.touchAction = "none";
 
 document.body.appendChild(renderer.domElement);
 
@@ -21,15 +23,8 @@ const scene = new THREE.Scene();
 
 scene.background = camera.backgroundTexture;
 
-const status = document.getElementById("status");
-const placeBtn = document.getElementById("place");
-const errorBox = document.getElementById("error");
-const scoreEl = document.getElementById("score");
-
-let placed = false;
-let gameOver = false;
-
 const tracker = new ZapparThree.InstantWorldTracker();
+
 const anchor = new ZapparThree.InstantWorldAnchorGroup(
   camera,
   tracker
@@ -37,24 +32,30 @@ const anchor = new ZapparThree.InstantWorldAnchorGroup(
 
 scene.add(anchor);
 
+const status = document.getElementById("status");
+const placeBtn = document.getElementById("place");
+const errorBox = document.getElementById("error");
+const scoreEl = document.getElementById("score");
 
-// --------------------------------------------------
-// BOARD
-// --------------------------------------------------
+let placed = false;
+let gameOver = false;
+let timer = null;
+
+
+/* =========================
+   BOARD
+========================= */
 
 const board = new THREE.Group();
 
-board.position.set(0, 0, 0);
-
-// Make the Tetris board vertical.
-board.rotation.x = Math.PI / 2;
+board.rotation.set(0, 0, 0);
 
 anchor.add(board);
 
 
-// --------------------------------------------------
-// TETRIS SETTINGS
-// --------------------------------------------------
+/* =========================
+   TETRIS SETTINGS
+========================= */
 
 const W = 10;
 const H = 20;
@@ -93,14 +94,14 @@ const shapes = [
 ];
 
 const grid = Array.from(
-  { length: H },
+  {length: H},
   () => Array(W).fill(null)
 );
 
 
-// --------------------------------------------------
-// BOARD FRAME
-// --------------------------------------------------
+/* =========================
+   BOARD FRAME
+========================= */
 
 const frame = new THREE.LineSegments(
   new THREE.EdgesGeometry(
@@ -112,22 +113,22 @@ const frame = new THREE.LineSegments(
   new THREE.LineBasicMaterial({
     color: 0xffffff,
     transparent: true,
-    opacity: 0.55
+    opacity: 0.6
   })
 );
 
 frame.position.set(
   (W * CELL) / 2 - CELL / 2,
   (H * CELL) / 2 - CELL / 2,
-  -0.012
+  -0.02
 );
 
 board.add(frame);
 
 
-// --------------------------------------------------
-// BOARD CELLS
-// --------------------------------------------------
+/* =========================
+   BOARD CELLS
+========================= */
 
 const cells = [];
 
@@ -164,9 +165,9 @@ for (let y = 0; y < H; y++) {
 }
 
 
-// --------------------------------------------------
-// ACTIVE PIECE
-// --------------------------------------------------
+/* =========================
+   ACTIVE PIECE
+========================= */
 
 let active = [];
 
@@ -176,21 +177,23 @@ let rot = 0;
 let type = 0;
 
 
-// --------------------------------------------------
-// ROTATION
-// --------------------------------------------------
+/* =========================
+   ROTATION
+========================= */
 
 function rotated(shape, rotations) {
 
-  let a = shape.map(row => row.slice());
+  let result = shape.map(
+    row => row.slice()
+  );
 
-  for (let k = 0; k < rotations; k++) {
+  for (let r = 0; r < rotations; r++) {
 
-    const h = a.length;
-    const w = a[0].length;
+    const h = result.length;
+    const w = result[0].length;
 
     const next = Array.from(
-      { length: w },
+      {length: w},
       () => Array(h).fill(0)
     );
 
@@ -198,21 +201,21 @@ function rotated(shape, rotations) {
 
       for (let x = 0; x < w; x++) {
 
-        next[x][h - 1 - y] = a[y][x];
-
+        next[x][h - 1 - y] =
+          result[y][x];
       }
     }
 
-    a = next;
+    result = next;
   }
 
-  return a;
+  return result;
 }
 
 
-// --------------------------------------------------
-// CHECK IF PIECE CAN MOVE
-// --------------------------------------------------
+/* =========================
+   VALID MOVE
+========================= */
 
 function valid(nx, ny, nr) {
 
@@ -249,15 +252,15 @@ function valid(nx, ny, nr) {
 }
 
 
-// --------------------------------------------------
-// DRAW ACTIVE PIECE
-// --------------------------------------------------
+/* =========================
+   DRAW PIECE
+========================= */
 
 function draw() {
 
-  active.forEach(object => {
-    board.remove(object);
-  });
+  active.forEach(
+    object => board.remove(object)
+  );
 
   active = [];
 
@@ -277,24 +280,23 @@ function draw() {
           color: colors[type]
         });
 
-      const object =
-        new THREE.Mesh(
-          new THREE.BoxGeometry(
-            CELL * 0.92,
-            CELL * 0.92,
-            0.06
-          ),
-          material
-        );
+      const object = new THREE.Mesh(
+        new THREE.BoxGeometry(
+          CELL * 0.92,
+          CELL * 0.92,
+          0.06
+        ),
+        material
+      );
 
       object.position.set(
         (px + x) * CELL -
-          (W * CELL) / 2 +
-          CELL / 2,
+        (W * CELL) / 2 +
+        CELL / 2,
 
         (py + y) * CELL -
-          (H * CELL) / 2 +
-          CELL / 2,
+        (H * CELL) / 2 +
+        CELL / 2,
 
         0.035
       );
@@ -306,9 +308,9 @@ function draw() {
 }
 
 
-// --------------------------------------------------
-// NEW PIECE
-// --------------------------------------------------
+/* =========================
+   NEW PIECE
+========================= */
 
 function makePiece() {
 
@@ -320,34 +322,32 @@ function makePiece() {
 
   const shape = shapes[type];
 
-  // Spawn above the visible bottom area,
-  // but completely inside the board.
   px = Math.floor(
     (W - shape[0].length) / 2
   );
 
   py = H - shape.length;
 
-  draw();
-
-  // Only game over if the new piece
-  // actually cannot fit.
   if (!valid(px, py, rot)) {
 
     gameOver = true;
 
-    status.textContent =
-      "GAME OVER — tap PLACE to restart";
+    status.textContent = "GAME OVER";
 
     placeBtn.textContent = "RESTART";
+
     placeBtn.style.display = "block";
+
+    return;
   }
+
+  draw();
 }
 
 
-// --------------------------------------------------
-// LOCK PIECE
-// --------------------------------------------------
+/* =========================
+   LOCK PIECE
+========================= */
 
 function lock() {
 
@@ -360,34 +360,31 @@ function lock() {
 
     for (let x = 0; x < shape[0].length; x++) {
 
-      if (shape[y][x]) {
+      if (!shape[y][x]) continue;
 
-        const gx = px + x;
-        const gy = py + y;
+      const gx = px + x;
+      const gy = py + y;
 
-        if (
-          gx >= 0 &&
-          gx < W &&
-          gy >= 0 &&
-          gy < H
-        ) {
+      if (
+        gx >= 0 &&
+        gx < W &&
+        gy >= 0 &&
+        gy < H
+      ) {
 
-          grid[gy][gx] =
-            colors[type];
-        }
+        grid[gy][gx] = colors[type];
       }
     }
   }
 
   clearLines();
-
   makePiece();
 }
 
 
-// --------------------------------------------------
-// CLEAR LINES
-// --------------------------------------------------
+/* =========================
+   CLEAR LINES
+========================= */
 
 function clearLines() {
 
@@ -404,27 +401,26 @@ function clearLines() {
       );
 
       lines++;
-
       y--;
     }
   }
 
   if (lines > 0) {
 
-    const current =
+    const score =
       Number(scoreEl.textContent) || 0;
 
     scoreEl.textContent =
-      current + lines * 100;
+      score + lines * 100;
   }
 
   updateBoard();
 }
 
 
-// --------------------------------------------------
-// UPDATE BOARD
-// --------------------------------------------------
+/* =========================
+   UPDATE BOARD
+========================= */
 
 function updateBoard() {
 
@@ -456,21 +452,15 @@ function updateBoard() {
 }
 
 
-// --------------------------------------------------
-// MOVE LEFT / RIGHT
-// --------------------------------------------------
+/* =========================
+   MOVE LEFT / RIGHT
+========================= */
 
 function move(dx) {
 
   if (!placed || gameOver) return;
 
-  if (
-    valid(
-      px + dx,
-      py,
-      rot
-    )
-  ) {
+  if (valid(px + dx, py, rot)) {
 
     px += dx;
     draw();
@@ -478,9 +468,9 @@ function move(dx) {
 }
 
 
-// --------------------------------------------------
-// ROTATE
-// --------------------------------------------------
+/* =========================
+   ROTATE
+========================= */
 
 function turn() {
 
@@ -503,9 +493,9 @@ function turn() {
 }
 
 
-// --------------------------------------------------
-// HARD DROP
-// --------------------------------------------------
+/* =========================
+   HARD DROP
+========================= */
 
 function hardDrop() {
 
@@ -527,11 +517,9 @@ function hardDrop() {
 }
 
 
-// --------------------------------------------------
-// AUTOMATIC FALL
-// --------------------------------------------------
-
-let timer = null;
+/* =========================
+   START GAME
+========================= */
 
 function startGame() {
 
@@ -579,9 +567,9 @@ function startGame() {
 }
 
 
-// --------------------------------------------------
-// PLACE / RESTART
-// --------------------------------------------------
+/* =========================
+   PLACE / RESTART
+========================= */
 
 placeBtn.addEventListener(
   "click",
@@ -595,8 +583,6 @@ placeBtn.addEventListener(
 
     if (!placed) {
 
-      // Place the board several meters
-      // in front of the camera.
       tracker.setAnchorPoseFromCameraOffset(
         0,
         0,
@@ -608,7 +594,7 @@ placeBtn.addEventListener(
       placeBtn.style.display = "none";
 
       status.textContent =
-        "Tetris is on the wall — play!";
+        "Swipe left/right • Tap to rotate • Swipe down to drop";
 
       startGame();
     }
@@ -616,118 +602,140 @@ placeBtn.addEventListener(
 );
 
 
-// --------------------------------------------------
-// MOBILE CONTROLS
-// --------------------------------------------------
+/* =========================
+   TOUCH CONTROLS
+========================= */
 
-function buttonPress(button, action) {
+let touchStartX = 0;
+let touchStartY = 0;
+let touchStartTime = 0;
 
-  button.addEventListener(
-    "pointerdown",
-    event => {
-
-      event.preventDefault();
-
-      action();
-    }
-  );
-
-  button.addEventListener(
-    "touchstart",
-    event => {
-
-      event.preventDefault();
-
-      action();
-    },
-    { passive: false }
-  );
-}
-
-buttonPress(
-  document.getElementById("left"),
-  () => move(-1)
-);
-
-buttonPress(
-  document.getElementById("right"),
-  () => move(1)
-);
-
-buttonPress(
-  document.getElementById("rotate"),
-  () => turn()
-);
-
-buttonPress(
-  document.getElementById("drop"),
-  () => hardDrop()
-);
+const SWIPE_DISTANCE = 40;
+const TAP_TIME = 300;
 
 
-// --------------------------------------------------
-// KEYBOARD CONTROLS
-// --------------------------------------------------
-
-addEventListener(
-  "keydown",
+renderer.domElement.addEventListener(
+  "touchstart",
   event => {
 
-    if (event.key === "ArrowLeft") {
-      move(-1);
-    }
+    if (!placed || gameOver) return;
 
-    if (event.key === "ArrowRight") {
-      move(1);
-    }
+    const touch =
+      event.changedTouches[0];
 
-    if (event.key === "ArrowUp") {
-      turn();
-    }
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+    touchStartTime = Date.now();
 
-    if (event.key === "ArrowDown") {
-      hardDrop();
-    }
-  }
+  },
+  {passive: true}
 );
 
 
-// --------------------------------------------------
-// CAMERA
-// --------------------------------------------------
+renderer.domElement.addEventListener(
+  "touchend",
+  event => {
 
-ZapparThree
-  .permissionRequestUI()
-  .then(granted => {
+    if (!placed || gameOver) return;
 
-    if (granted) {
+    const touch =
+      event.changedTouches[0];
 
-      camera.start();
+    const dx =
+      touch.clientX - touchStartX;
 
-      status.textContent =
-        "Point your phone at a wall, then tap PLACE";
+    const dy =
+      touch.clientY - touchStartY;
 
-    } else {
+    const duration =
+      Date.now() - touchStartTime;
 
-      ZapparThree.permissionDeniedUI();
+    const distance =
+      Math.sqrt(
+        dx * dx + dy * dy
+      );
 
-      status.textContent =
-        "Camera permission is required";
+
+    if (
+      distance < SWIPE_DISTANCE &&
+      duration < TAP_TIME
+    ) {
+
+      turn();
+      return;
     }
-  })
-  .catch(error => {
-
-    errorBox.hidden = false;
-
-    errorBox.textContent =
-      "Camera startup failed.\n" +
-      error.message;
-  });
 
 
-// --------------------------------------------------
-// RENDER
-// --------------------------------------------------
+    if (
+      Math.abs(dx) > Math.abs(dy) &&
+      dx < -SWIPE_DISTANCE
+    ) {
+
+      move(-1);
+      return;
+    }
+
+
+    if (
+      Math.abs(dx) > Math.abs(dy) &&
+      dx > SWIPE_DISTANCE
+    ) {
+
+      move(1);
+      return;
+    }
+
+
+    if (
+      Math.abs(dy) > Math.abs(dx) &&
+      dy > SWIPE_DISTANCE
+    ) {
+
+      hardDrop();
+      return;
+    }
+
+  },
+  {passive: true}
+);
+
+
+/* =========================
+   CAMERA
+========================= */
+
+ZapparThree.permissionRequestUI()
+.then(granted => {
+
+  if (granted) {
+
+    camera.start();
+
+    status.textContent =
+      "Point your phone at a wall, then tap PLACE";
+
+  } else {
+
+    ZapparThree.permissionDeniedUI();
+
+    status.textContent =
+      "Camera permission is required";
+  }
+
+})
+.catch(error => {
+
+  errorBox.hidden = false;
+
+  errorBox.textContent =
+    "Camera startup failed.\n" +
+    error.message;
+});
+
+
+/* =========================
+   RENDER
+========================= */
 
 function render() {
 
@@ -748,14 +756,12 @@ function render() {
   );
 }
 
-renderer.setAnimationLoop(
-  render
-);
+renderer.setAnimationLoop(render);
 
 
-// --------------------------------------------------
-// RESIZE
-// --------------------------------------------------
+/* =========================
+   RESIZE
+========================= */
 
 addEventListener(
   "resize",
