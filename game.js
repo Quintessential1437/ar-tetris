@@ -1,15 +1,24 @@
+/* =========================================================
+   AR TETRIS PORTAL
+   ========================================================= */
+
+
+/* =========================================================
+   RENDERER
+   ========================================================= */
+
 const renderer = new THREE.WebGLRenderer({
   antialias: true,
   alpha: true
 });
 
 renderer.setPixelRatio(
-  Math.min(devicePixelRatio, 2)
+  Math.min(window.devicePixelRatio, 2)
 );
 
 renderer.setSize(
-  innerWidth,
-  innerHeight
+  window.innerWidth,
+  window.innerHeight
 );
 
 renderer.domElement.style.position = "fixed";
@@ -20,19 +29,31 @@ renderer.domElement.style.height = "100%";
 renderer.domElement.style.zIndex = "0";
 renderer.domElement.style.touchAction = "none";
 
-document.body.appendChild(renderer.domElement);
+document.body.appendChild(
+  renderer.domElement
+);
+
+
+/* =========================================================
+   ZAPPAR WEBGL CONTEXT
+   ========================================================= */
 
 ZapparThree.glContextSet(
   renderer.getContext()
 );
 
 
-/* =========================
+/* =========================================================
    CAMERA
-========================= */
+   ========================================================= */
 
 const camera =
   new ZapparThree.Camera();
+
+
+/* =========================================================
+   SCENE
+   ========================================================= */
 
 const scene =
   new THREE.Scene();
@@ -41,12 +62,27 @@ scene.background =
   camera.backgroundTexture;
 
 
-/* =========================
-   AR WORLD TRACKER
-========================= */
+/* =========================================================
+   INSTANT WORLD TRACKER
+   ========================================================= */
 
 const tracker =
   new ZapparThree.InstantWorldTracker();
+
+
+/*
+   Explicitly enable the tracker.
+
+   This makes sure the world tracker continues
+   processing after the camera starts.
+*/
+
+tracker.enabled = true;
+
+
+/* =========================================================
+   WORLD ANCHOR GROUP
+   ========================================================= */
 
 const anchor =
   new ZapparThree.InstantWorldAnchorGroup(
@@ -57,9 +93,9 @@ const anchor =
 scene.add(anchor);
 
 
-/* =========================
+/* =========================================================
    UI
-========================= */
+   ========================================================= */
 
 const status =
   document.getElementById("status");
@@ -74,18 +110,31 @@ const scoreEl =
   document.getElementById("score");
 
 
-/* =========================
+/* =========================================================
    GAME STATE
-========================= */
+   ========================================================= */
 
 let placed = false;
+
 let gameOver = false;
+
 let timer = null;
 
 
-/* =========================
-   FLOATING TETRIS WORLD
-========================= */
+/* =========================================================
+   TETRIS WORLD
+   ========================================================= */
+
+/*
+   Everything is attached to the AR anchor.
+
+   IMPORTANT:
+
+   We do NOT attach the game to the camera.
+
+   The anchor belongs to the real-world tracking
+   coordinate system.
+*/
 
 const world =
   new THREE.Group();
@@ -93,9 +142,9 @@ const world =
 anchor.add(world);
 
 
-/* =========================
-   TETRIS BOARD
-========================= */
+/* =========================================================
+   BOARD
+   ========================================================= */
 
 const board =
   new THREE.Group();
@@ -103,21 +152,23 @@ const board =
 world.add(board);
 
 
-/* =========================
+/* =========================================================
    TETRIS SETTINGS
-========================= */
-
-/*
-   Smaller than the previous
-   version so the complete
-   game fits better in view.
-
-   10 x 20 = 1.8m x 3.6m
-*/
+   ========================================================= */
 
 const W = 10;
 const H = 20;
-const CELL = 0.18;
+
+
+/*
+   Slightly smaller than before.
+
+   This keeps the game more comfortable
+   on a phone while still giving the blocks
+   visible 3D depth.
+*/
+
+const CELL = 0.14;
 
 const BOARD_WIDTH =
   W * CELL;
@@ -126,16 +177,16 @@ const BOARD_HEIGHT =
   H * CELL;
 
 
-/* =========================
-   BLOCK DEPTH
-========================= */
+/* =========================================================
+   3D BLOCK DEPTH
+   ========================================================= */
 
-const BLOCK_DEPTH = 0.22;
+const BLOCK_DEPTH = 0.18;
 
 
-/* =========================
+/* =========================================================
    COLORS
-========================= */
+   ========================================================= */
 
 const colors = [
 
@@ -156,9 +207,9 @@ const colors = [
 ];
 
 
-/* =========================
+/* =========================================================
    TETRIS SHAPES
-========================= */
+   ========================================================= */
 
 const shapes = [
 
@@ -199,9 +250,9 @@ const shapes = [
 ];
 
 
-/* =========================
+/* =========================================================
    GAME GRID
-========================= */
+   ========================================================= */
 
 const grid =
   Array.from(
@@ -210,184 +261,212 @@ const grid =
   );
 
 
-/* =========================
-   TRANSPARENT GAME BORDER
-========================= */
-
-/*
-   IMPORTANT:
-
-   There is NO background
-   plane behind the game.
-
-   Only the border exists.
-*/
+/* =========================================================
+   TRANSPARENT BORDER
+   ========================================================= */
 
 const borderMaterial =
   new THREE.MeshBasicMaterial({
+
     color: 0xffffff,
+
     transparent: true,
-    opacity: 0.8
+
+    opacity: 0.8,
+
+    depthWrite: false
+
   });
 
 
-/* =========================
+/* =========================================================
    TOP BORDER
-========================= */
+   ========================================================= */
 
 const topBorder =
   new THREE.Mesh(
+
     new THREE.BoxGeometry(
-      BOARD_WIDTH + 0.10,
-      0.055,
-      0.055
+      BOARD_WIDTH + 0.08,
+      0.045,
+      0.045
     ),
+
     borderMaterial
+
   );
 
 topBorder.position.set(
+
   0,
-  BOARD_HEIGHT / 2 + 0.025,
+
+  BOARD_HEIGHT / 2 + 0.02,
+
   0
+
 );
 
-board.add(topBorder);
+board.add(
+  topBorder
+);
 
 
-/* =========================
+/* =========================================================
    BOTTOM BORDER
-========================= */
+   ========================================================= */
 
 const bottomBorder =
   new THREE.Mesh(
+
     new THREE.BoxGeometry(
-      BOARD_WIDTH + 0.10,
-      0.055,
-      0.055
+      BOARD_WIDTH + 0.08,
+      0.045,
+      0.045
     ),
+
     borderMaterial
+
   );
 
 bottomBorder.position.set(
+
   0,
-  -BOARD_HEIGHT / 2 - 0.025,
+
+  -BOARD_HEIGHT / 2 - 0.02,
+
   0
+
 );
 
-board.add(bottomBorder);
+board.add(
+  bottomBorder
+);
 
 
-/* =========================
+/* =========================================================
    LEFT BORDER
-========================= */
+   ========================================================= */
 
 const leftBorder =
   new THREE.Mesh(
+
     new THREE.BoxGeometry(
-      0.055,
-      BOARD_HEIGHT + 0.10,
-      0.055
+      0.045,
+      BOARD_HEIGHT + 0.08,
+      0.045
     ),
+
     borderMaterial
+
   );
 
 leftBorder.position.set(
-  -BOARD_WIDTH / 2 - 0.025,
+
+  -BOARD_WIDTH / 2 - 0.02,
+
   0,
+
   0
+
 );
 
-board.add(leftBorder);
+board.add(
+  leftBorder
+);
 
 
-/* =========================
+/* =========================================================
    RIGHT BORDER
-========================= */
+   ========================================================= */
 
 const rightBorder =
   new THREE.Mesh(
+
     new THREE.BoxGeometry(
-      0.055,
-      BOARD_HEIGHT + 0.10,
-      0.055
+      0.045,
+      BOARD_HEIGHT + 0.08,
+      0.045
     ),
+
     borderMaterial
+
   );
 
 rightBorder.position.set(
-  BOARD_WIDTH / 2 + 0.025,
+
+  BOARD_WIDTH / 2 + 0.02,
+
   0,
+
   0
+
 );
 
-board.add(rightBorder);
+board.add(
+  rightBorder
+);
 
 
-/* =========================
-   NO BACKGROUND
-========================= */
+/* =========================================================
+   NO BACKGROUND PLANE
+   ========================================================= */
 
 /*
-   IMPORTANT:
+   There is intentionally NO background plane.
 
-   We intentionally do NOT
-   create a PlaneGeometry here.
-
-   There is absolutely
-   nothing behind the blocks.
-
-   The real world remains
-   visible through the entire
-   Tetris game.
+   The real world remains visible between
+   all of the Tetris blocks.
 */
 
 
-/* =========================
+/* =========================================================
    ACTIVE PIECE
-========================= */
+   ========================================================= */
 
 let active = [];
 
 let px = 3;
+
 let py = 0;
+
 let rot = 0;
+
 let type = 0;
 
 
-/* =========================
+/* =========================================================
    CREATE 3D BLOCK
-========================= */
+   ========================================================= */
 
-function createBlock(
-  color
-) {
-
-  /*
-     A real 3D cube.
-
-     Width  = CELL
-     Height = CELL
-     Depth  = BLOCK_DEPTH
-  */
+function createBlock(color) {
 
   const geometry =
     new THREE.BoxGeometry(
+
       CELL * 0.88,
+
       CELL * 0.88,
+
       BLOCK_DEPTH
+
     );
 
 
   const material =
     new THREE.MeshBasicMaterial({
+
       color: color
+
     });
 
 
   const block =
     new THREE.Mesh(
+
       geometry,
+
       material
+
     );
 
 
@@ -395,9 +474,9 @@ function createBlock(
 }
 
 
-/* =========================
-   ROTATION
-========================= */
+/* =========================================================
+   ROTATE SHAPE
+   ========================================================= */
 
 function rotated(
   shape,
@@ -408,6 +487,7 @@ function rotated(
     shape.map(
       row => row.slice()
     );
+
 
   for (
     let r = 0;
@@ -421,11 +501,16 @@ function rotated(
     const w =
       result[0].length;
 
+
     const next =
       Array.from(
+
         { length: w },
+
         () => Array(h).fill(0)
+
       );
+
 
     for (
       let y = 0;
@@ -443,18 +528,21 @@ function rotated(
           result[y][x];
 
       }
+
     }
+
 
     result = next;
   }
+
 
   return result;
 }
 
 
-/* =========================
+/* =========================================================
    VALID MOVE
-========================= */
+   ========================================================= */
 
 function valid(
   nx,
@@ -468,6 +556,7 @@ function valid(
       nr
     );
 
+
   for (
     let y = 0;
     y < shape.length;
@@ -480,14 +569,17 @@ function valid(
       x++
     ) {
 
-      if (!shape[y][x])
-        continue;
+      if (
+        !shape[y][x]
+      ) continue;
+
 
       const gx =
         nx + x;
 
       const gy =
         ny + y;
+
 
       if (
         gx < 0 ||
@@ -497,40 +589,61 @@ function valid(
       ) {
 
         return false;
+
       }
+
 
       if (
         grid[gy][gx]
       ) {
 
         return false;
+
       }
+
     }
+
   }
+
 
   return true;
 }
 
 
-/* =========================
+/* =========================================================
    DRAW ACTIVE PIECE
-========================= */
+   ========================================================= */
 
 function draw() {
 
   active.forEach(
     object => {
-      board.remove(object);
 
-      if (object.geometry) {
+      board.remove(
+        object
+      );
+
+
+      if (
+        object.geometry
+      ) {
+
         object.geometry.dispose();
+
       }
 
-      if (object.material) {
+
+      if (
+        object.material
+      ) {
+
         object.material.dispose();
+
       }
+
     }
   );
+
 
   active = [];
 
@@ -554,8 +667,9 @@ function draw() {
       x++
     ) {
 
-      if (!shape[y][x])
-        continue;
+      if (
+        !shape[y][x]
+      ) continue;
 
 
       const object =
@@ -566,39 +680,40 @@ function draw() {
 
       object.position.set(
 
-        (px + x) * CELL -
-        BOARD_WIDTH / 2 +
-        CELL / 2,
+        (px + x) * CELL
+        - BOARD_WIDTH / 2
+        + CELL / 2,
 
-        (py + y) * CELL -
-        BOARD_HEIGHT / 2 +
-        CELL / 2,
+        (py + y) * CELL
+        - BOARD_HEIGHT / 2
+        + CELL / 2,
 
         0
 
       );
 
 
-      board.add(object);
+      board.add(
+        object
+      );
 
-      active.push(object);
+
+      active.push(
+        object
+      );
+
     }
+
   }
+
 }
 
 
-/* =========================
+/* =========================================================
    DRAW LOCKED BLOCKS
-========================= */
+   ========================================================= */
 
 function drawLockedBlocks() {
-
-  /*
-     Remove all existing
-     locked block meshes.
-
-     Active pieces are kept.
-  */
 
   const lockedObjects =
     board.children.filter(
@@ -611,14 +726,26 @@ function drawLockedBlocks() {
   lockedObjects.forEach(
     object => {
 
-      board.remove(object);
+      board.remove(
+        object
+      );
 
-      if (object.geometry) {
+
+      if (
+        object.geometry
+      ) {
+
         object.geometry.dispose();
+
       }
 
-      if (object.material) {
+
+      if (
+        object.material
+      ) {
+
         object.material.dispose();
+
       }
 
     }
@@ -637,8 +764,9 @@ function drawLockedBlocks() {
       x++
     ) {
 
-      if (!grid[y][x])
-        continue;
+      if (
+        !grid[y][x]
+      ) continue;
 
 
       const object =
@@ -653,28 +781,33 @@ function drawLockedBlocks() {
 
       object.position.set(
 
-        x * CELL -
-        BOARD_WIDTH / 2 +
-        CELL / 2,
+        x * CELL
+        - BOARD_WIDTH / 2
+        + CELL / 2,
 
-        y * CELL -
-        BOARD_HEIGHT / 2 +
-        CELL / 2,
+        y * CELL
+        - BOARD_HEIGHT / 2
+        + CELL / 2,
 
         0
 
       );
 
 
-      board.add(object);
+      board.add(
+        object
+      );
+
     }
+
   }
+
 }
 
 
-/* =========================
+/* =========================================================
    NEW PIECE
-========================= */
+   ========================================================= */
 
 function makePiece() {
 
@@ -684,7 +817,9 @@ function makePiece() {
       shapes.length
     );
 
+
   rot = 0;
+
 
   const shape =
     shapes[type];
@@ -710,10 +845,13 @@ function makePiece() {
 
     gameOver = true;
 
+
     status.textContent =
       "GAME OVER — TAP TO RESTART";
 
+
     return;
+
   }
 
 
@@ -721,9 +859,9 @@ function makePiece() {
 }
 
 
-/* =========================
+/* =========================================================
    LOCK PIECE
-========================= */
+   ========================================================= */
 
 function lock() {
 
@@ -746,8 +884,9 @@ function lock() {
       x++
     ) {
 
-      if (!shape[y][x])
-        continue;
+      if (
+        !shape[y][x]
+      ) continue;
 
 
       const gx =
@@ -758,32 +897,40 @@ function lock() {
 
 
       if (
+
         gx >= 0 &&
         gx < W &&
         gy >= 0 &&
         gy < H
+
       ) {
 
         grid[gy][gx] =
           colors[type];
+
       }
+
     }
+
   }
 
 
   clearLines();
 
+
   makePiece();
 
+
   drawLockedBlocks();
+
 
   draw();
 }
 
 
-/* =========================
+/* =========================================================
    CLEAR LINES
-========================= */
+   ========================================================= */
 
 function clearLines() {
 
@@ -805,18 +952,25 @@ function clearLines() {
         1
       );
 
+
       grid.push(
         Array(W).fill(null)
       );
 
+
       lines++;
 
+
       y--;
+
     }
+
   }
 
 
-  if (lines > 0) {
+  if (
+    lines > 0
+  ) {
 
     const score =
       Number(
@@ -827,13 +981,15 @@ function clearLines() {
     scoreEl.textContent =
       score +
       lines * 100;
+
   }
+
 }
 
 
-/* =========================
-   MOVE
-========================= */
+/* =========================================================
+   MOVE LEFT / RIGHT
+   ========================================================= */
 
 function move(dx) {
 
@@ -854,13 +1010,15 @@ function move(dx) {
     px += dx;
 
     draw();
+
   }
+
 }
 
 
-/* =========================
+/* =========================================================
    ROTATE
-========================= */
+   ========================================================= */
 
 function turn() {
 
@@ -885,14 +1043,17 @@ function turn() {
     rot =
       nextRotation;
 
+
     draw();
+
   }
+
 }
 
 
-/* =========================
+/* =========================================================
    HARD DROP
-========================= */
+   ========================================================= */
 
 function hardDrop() {
 
@@ -911,18 +1072,20 @@ function hardDrop() {
   ) {
 
     py--;
+
   }
 
 
   draw();
 
+
   lock();
 }
 
 
-/* =========================
+/* =========================================================
    START GAME
-========================= */
+   ========================================================= */
 
 function startGame() {
 
@@ -940,7 +1103,9 @@ function startGame() {
 
       grid[y][x] =
         null;
+
     }
+
   }
 
 
@@ -953,16 +1118,21 @@ function startGame() {
 
   makePiece();
 
+
   drawLockedBlocks();
+
 
   draw();
 
 
-  clearInterval(timer);
+  clearInterval(
+    timer
+  );
 
 
   timer =
     setInterval(
+
       () => {
 
         if (
@@ -986,68 +1156,111 @@ function startGame() {
         } else {
 
           lock();
+
         }
 
       },
+
       650
+
     );
 }
 
 
-/* =========================
-   PLACE FLOATING TETRIS
-========================= */
+/* =========================================================
+   PLACE TETRIS IN REAL WORLD
+   ========================================================= */
 
 placeBtn.addEventListener(
+
   "click",
+
   () => {
 
-    if (gameOver) {
+    /*
+       Restart after game over.
+    */
+
+    if (
+      gameOver
+    ) {
 
       startGame();
 
       return;
+
     }
 
 
-    if (!placed) {
+    /*
+       Do nothing if already placed.
+    */
 
-      /*
-         The Tetris game is
-         placed several metres
-         in front of the camera.
-
-         It is NOT attached
-         to a wall.
-      */
-
-      tracker.setAnchorPoseFromCameraOffset(
-        0,
-        0,
-        -5
-      );
+    if (
+      placed
+    ) return;
 
 
-      placed = true;
+    /*
+       IMPORTANT:
+
+       We are deliberately NOT putting the
+       Tetris on the camera.
+
+       The tracker establishes a point
+       in the real environment.
+
+       Once placed = true, this call STOPS.
+
+       From then on, Zappar tracks the
+       anchor as the phone moves.
+    */
+
+    tracker.setAnchorPoseFromCameraOffset(
+
+      0,
+
+      0,
+
+      -3
+
+    );
 
 
-      placeBtn.style.display =
-        "none";
+    /*
+       Tell the animation loop that the
+       Tetris is now locked into the world.
+    */
+
+    placed = true;
 
 
-      status.textContent =
-        "TAP = ROTATE • SWIPE = MOVE • WALK AROUND THE GAME";
+    /*
+       Hide placement button.
+    */
+
+    placeBtn.style.display =
+      "none";
 
 
-      startGame();
-    }
+    status.textContent =
+      "TAP = ROTATE • SWIPE = MOVE • WALK AROUND THE GAME";
+
+
+    /*
+       Start Tetris.
+    */
+
+    startGame();
+
   }
+
 );
 
 
-/* =========================
+/* =========================================================
    TOUCH CONTROLS
-========================= */
+   ========================================================= */
 
 let touchStartX = 0;
 
@@ -1061,8 +1274,14 @@ const SWIPE_DISTANCE = 40;
 const TAP_TIME = 300;
 
 
+/* =========================================================
+   TOUCH START
+   ========================================================= */
+
 renderer.domElement.addEventListener(
+
   "touchstart",
+
   event => {
 
     const touch =
@@ -1072,21 +1291,31 @@ renderer.domElement.addEventListener(
     touchStartX =
       touch.clientX;
 
+
     touchStartY =
       touch.clientY;
+
 
     touchStartTime =
       Date.now();
 
   },
+
   {
     passive: true
   }
+
 );
 
 
+/* =========================================================
+   TOUCH END
+   ========================================================= */
+
 renderer.domElement.addEventListener(
+
   "touchend",
+
   event => {
 
     if (
@@ -1102,6 +1331,7 @@ renderer.domElement.addEventListener(
     const dx =
       touch.clientX -
       touchStartX;
+
 
     const dy =
       touch.clientY -
@@ -1121,8 +1351,7 @@ renderer.domElement.addEventListener(
 
 
     /*
-       TAP
-       Rotate
+       TAP = ROTATE
     */
 
     if (
@@ -1135,6 +1364,7 @@ renderer.domElement.addEventListener(
       turn();
 
       return;
+
     }
 
 
@@ -1143,15 +1373,19 @@ renderer.domElement.addEventListener(
     */
 
     if (
+
       Math.abs(dx) >
       Math.abs(dy) &&
+
       dx <
       -SWIPE_DISTANCE
+
     ) {
 
       move(-1);
 
       return;
+
     }
 
 
@@ -1160,59 +1394,84 @@ renderer.domElement.addEventListener(
     */
 
     if (
+
       Math.abs(dx) >
       Math.abs(dy) &&
+
       dx >
       SWIPE_DISTANCE
+
     ) {
 
       move(1);
 
       return;
+
     }
 
 
     /*
-       SWIPE DOWN
+       SWIPE DOWN = HARD DROP
     */
 
     if (
+
       Math.abs(dy) >
       Math.abs(dx) &&
+
       dy >
       SWIPE_DISTANCE
+
     ) {
 
       hardDrop();
 
       return;
+
     }
 
   },
+
   {
     passive: true
   }
+
 );
 
 
-/* =========================
+/* =========================================================
    CAMERA PERMISSION
-========================= */
+   ========================================================= */
 
 ZapparThree
   .permissionRequestUI()
+
   .then(
+
     granted => {
 
-      if (granted) {
+      if (
+        granted
+      ) {
 
         camera.start();
+
+
+        /*
+           Make absolutely sure the
+           world tracker is active.
+        */
+
+        tracker.enabled =
+          true;
 
 
         status.textContent =
           "Move your phone around, then tap ENTER TETRIS";
 
-      } else {
+      }
+
+      else {
 
         ZapparThree
           .permissionDeniedUI();
@@ -1220,11 +1479,15 @@ ZapparThree
 
         status.textContent =
           "Camera permission is required";
+
       }
 
     }
+
   )
+
   .catch(
+
     error => {
 
       errorBox.hidden =
@@ -1234,15 +1497,24 @@ ZapparThree
       errorBox.textContent =
         "Camera startup failed.\n" +
         error.message;
+
     }
+
   );
 
 
-/* =========================
-   RENDER LOOP
-========================= */
+/* =========================================================
+   AR RENDER LOOP
+   ========================================================= */
 
 function render() {
+
+  /*
+     Update the Zappar camera first.
+
+     This is important because the tracker
+     uses the latest camera frame.
+  */
 
   camera.updateFrame(
     renderer
@@ -1250,45 +1522,76 @@ function render() {
 
 
   /*
-     Before placement,
-     keep the preview at
-     a fixed point in front
-     of the camera.
+     BEFORE PLACEMENT:
+
+     Keep the placement point in front
+     of the user so the tracker can
+     continually update the preview.
+
+     AFTER PLACEMENT:
+
+     THIS CODE STOPS.
+
+     Therefore the Tetris is no longer
+     repositioned relative to the camera.
   */
 
-  if (!placed) {
+  if (
+    !placed
+  ) {
 
     tracker.setAnchorPoseFromCameraOffset(
+
       0,
+
       0,
-      -5
+
+      -3
+
     );
+
   }
 
+
+  /*
+     Render the world-anchored Tetris.
+  */
 
   renderer.render(
     scene,
     camera
   );
+
 }
 
+
+/* =========================================================
+   START RENDER LOOP
+   ========================================================= */
 
 renderer.setAnimationLoop(
   render
 );
 
 
-/* =========================
+/* =========================================================
    RESIZE
-========================= */
+   ========================================================= */
 
-addEventListener(
+window.addEventListener(
+
   "resize",
+
   () => {
 
     renderer.setSize(
-      innerWidth,
-      innerHeight
+
+      window.innerWidth,
+
+      window.innerHeight
+
     );
+
   }
+
 );
