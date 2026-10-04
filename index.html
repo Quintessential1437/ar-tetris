@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 
 <meta charset="utf-8">
@@ -9,7 +10,7 @@
   content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover"
 >
 
-<title>AR Tetris</title>
+<title>AR Tetris Portal</title>
 
 <link rel="stylesheet" href="style.css">
 
@@ -26,19 +27,25 @@
   <div>
     <b>AR TETRIS</b>
     <span id="status">
-      Point your phone at a wall
+      Move your phone to scan the space
     </span>
   </div>
 
   <div>
-    Score <b id="score">0</b>
+    SCORE
+    <b id="score">0</b>
   </div>
 
 </div>
+
+<button id="place">
+  ENTER TETRIS
+</button>
 
 <div id="error" hidden></div>
 
 <script src="game.js"></script>
 
 </body>
+
 </html>
