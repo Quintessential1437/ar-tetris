@@ -3,8 +3,14 @@ const renderer = new THREE.WebGLRenderer({
   alpha: true
 });
 
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(
+  Math.min(devicePixelRatio, 2)
+);
+
+renderer.setSize(
+  innerWidth,
+  innerHeight
+);
 
 renderer.domElement.style.position = "fixed";
 renderer.domElement.style.left = "0";
@@ -16,29 +22,61 @@ renderer.domElement.style.touchAction = "none";
 
 document.body.appendChild(renderer.domElement);
 
-ZapparThree.glContextSet(renderer.getContext());
+ZapparThree.glContextSet(
+  renderer.getContext()
+);
+
+
+/* =========================
+   CAMERA
+========================= */
 
 const camera = new ZapparThree.Camera();
+
 const scene = new THREE.Scene();
 
-scene.background = camera.backgroundTexture;
+scene.background =
+  camera.backgroundTexture;
 
-const tracker = new ZapparThree.InstantWorldTracker();
 
-const anchor = new ZapparThree.InstantWorldAnchorGroup(
-  camera,
-  tracker
-);
+/* =========================
+   AR TRACKER
+========================= */
+
+const tracker =
+  new ZapparThree.InstantWorldTracker();
+
+const anchor =
+  new ZapparThree.InstantWorldAnchorGroup(
+    camera,
+    tracker
+  );
 
 scene.add(anchor);
 
-const status = document.getElementById("status");
-const placeBtn = document.getElementById("place");
-const errorBox = document.getElementById("error");
-const scoreEl = document.getElementById("score");
+
+/* =========================
+   UI
+========================= */
+
+const status =
+  document.getElementById("status");
+
+const errorBox =
+  document.getElementById("error");
+
+const scoreEl =
+  document.getElementById("score");
+
+
+/* =========================
+   GAME STATE
+========================= */
 
 let placed = false;
+
 let gameOver = false;
+
 let timer = null;
 
 
@@ -46,9 +84,14 @@ let timer = null;
    BOARD
 ========================= */
 
-const board = new THREE.Group();
+const board =
+  new THREE.Group();
 
-board.rotation.set(0, 0, 0);
+board.rotation.set(
+  0,
+  0,
+  0
+);
 
 anchor.add(board);
 
@@ -58,69 +101,122 @@ anchor.add(board);
 ========================= */
 
 const W = 10;
+
 const H = 20;
+
 const CELL = 0.14;
-
-const colors = [
-  0x00e5ff,
-  0x4c6fff,
-  0xff9d00,
-  0xffdf00,
-  0x00e676,
-  0xa855f7,
-  0xff3d71
-];
-
-const shapes = [
-  [[1,1,1,1]],
-
-  [[1,0,0],
-   [1,1,1]],
-
-  [[0,0,1],
-   [1,1,1]],
-
-  [[1,1],
-   [1,1]],
-
-  [[0,1,1],
-   [1,1,0]],
-
-  [[0,1,0],
-   [1,1,1]],
-
-  [[1,1,0],
-   [0,1,1]]
-];
-
-const grid = Array.from(
-  {length: H},
-  () => Array(W).fill(null)
-);
 
 
 /* =========================
-   BOARD FRAME
+   COLORS
 ========================= */
 
-const frame = new THREE.LineSegments(
+const colors = [
+
+  0x00e5ff,
+
+  0x4c6fff,
+
+  0xff9d00,
+
+  0xffdf00,
+
+  0x00e676,
+
+  0xa855f7,
+
+  0xff3d71
+
+];
+
+
+/* =========================
+   SHAPES
+========================= */
+
+const shapes = [
+
+  [
+    [1,1,1,1]
+  ],
+
+  [
+    [1,0,0],
+    [1,1,1]
+  ],
+
+  [
+    [0,0,1],
+    [1,1,1]
+  ],
+
+  [
+    [1,1],
+    [1,1]
+  ],
+
+  [
+    [0,1,1],
+    [1,1,0]
+  ],
+
+  [
+    [0,1,0],
+    [1,1,1]
+  ],
+
+  [
+    [1,1,0],
+    [0,1,1]
+  ]
+
+];
+
+
+/* =========================
+   GRID
+========================= */
+
+const grid =
+  Array.from(
+    { length: H },
+    () => Array(W).fill(null)
+  );
+
+
+/* =========================
+   TETRIS BORDER
+========================= */
+
+const borderGeometry =
   new THREE.EdgesGeometry(
     new THREE.PlaneGeometry(
       W * CELL,
       H * CELL
     )
-  ),
+  );
+
+const borderMaterial =
   new THREE.LineBasicMaterial({
     color: 0xffffff,
     transparent: true,
-    opacity: 0.6
-  })
-);
+    opacity: 0.9
+  });
+
+const frame =
+  new THREE.LineSegments(
+    borderGeometry,
+    borderMaterial
+  );
 
 frame.position.set(
+
   (W * CELL) / 2 - CELL / 2,
+
   (H * CELL) / 2 - CELL / 2,
-  -0.02
+
+  -0.035
+
 );
 
 board.add(frame);
@@ -132,34 +228,54 @@ board.add(frame);
 
 const cells = [];
 
-for (let y = 0; y < H; y++) {
+for (
+  let y = 0;
+  y < H;
+  y++
+) {
 
-  for (let x = 0; x < W; x++) {
+  for (
+    let x = 0;
+    x < W;
+    x++
+  ) {
 
-    const geometry = new THREE.BoxGeometry(
-      CELL * 0.92,
-      CELL * 0.92,
-      0.045
-    );
+    const geometry =
+      new THREE.BoxGeometry(
+        CELL * 0.92,
+        CELL * 0.92,
+        0.045
+      );
 
-    const material = new THREE.MeshBasicMaterial({
-      color: 0x222733,
-      transparent: true,
-      opacity: 0.42
-    });
+    const material =
+      new THREE.MeshBasicMaterial({
+        color: 0x222733,
+        transparent: true,
+        opacity: 0.35
+      });
 
-    const cell = new THREE.Mesh(
-      geometry,
-      material
-    );
+    const cell =
+      new THREE.Mesh(
+        geometry,
+        material
+      );
 
     cell.position.set(
-      x * CELL - (W * CELL) / 2 + CELL / 2,
-      y * CELL - (H * CELL) / 2 + CELL / 2,
+
+      x * CELL -
+      (W * CELL) / 2 +
+      CELL / 2,
+
+      y * CELL -
+      (H * CELL) / 2 +
+      CELL / 2,
+
       0
+
     );
 
     board.add(cell);
+
     cells.push(cell);
   }
 }
@@ -172,8 +288,11 @@ for (let y = 0; y < H; y++) {
 let active = [];
 
 let px = 3;
+
 let py = 0;
+
 let rot = 0;
+
 let type = 0;
 
 
@@ -181,28 +300,49 @@ let type = 0;
    ROTATION
 ========================= */
 
-function rotated(shape, rotations) {
+function rotated(
+  shape,
+  rotations
+) {
 
-  let result = shape.map(
-    row => row.slice()
-  );
-
-  for (let r = 0; r < rotations; r++) {
-
-    const h = result.length;
-    const w = result[0].length;
-
-    const next = Array.from(
-      {length: w},
-      () => Array(h).fill(0)
+  let result =
+    shape.map(
+      row => row.slice()
     );
 
-    for (let y = 0; y < h; y++) {
+  for (
+    let r = 0;
+    r < rotations;
+    r++
+  ) {
 
-      for (let x = 0; x < w; x++) {
+    const h =
+      result.length;
+
+    const w =
+      result[0].length;
+
+    const next =
+      Array.from(
+        { length: w },
+        () => Array(h).fill(0)
+      );
+
+    for (
+      let y = 0;
+      y < h;
+      y++
+    ) {
+
+      for (
+        let x = 0;
+        x < w;
+        x++
+      ) {
 
         next[x][h - 1 - y] =
           result[y][x];
+
       }
     }
 
@@ -217,21 +357,38 @@ function rotated(shape, rotations) {
    VALID MOVE
 ========================= */
 
-function valid(nx, ny, nr) {
+function valid(
+  nx,
+  ny,
+  nr
+) {
 
-  const shape = rotated(
-    shapes[type],
-    nr
-  );
+  const shape =
+    rotated(
+      shapes[type],
+      nr
+    );
 
-  for (let y = 0; y < shape.length; y++) {
+  for (
+    let y = 0;
+    y < shape.length;
+    y++
+  ) {
 
-    for (let x = 0; x < shape[0].length; x++) {
+    for (
+      let x = 0;
+      x < shape[0].length;
+      x++
+    ) {
 
-      if (!shape[y][x]) continue;
+      if (!shape[y][x])
+        continue;
 
-      const gx = nx + x;
-      const gy = ny + y;
+      const gx =
+        nx + x;
+
+      const gy =
+        ny + y;
 
       if (
         gx < 0 ||
@@ -239,11 +396,15 @@ function valid(nx, ny, nr) {
         gy < 0 ||
         gy >= H
       ) {
+
         return false;
+
       }
 
       if (grid[gy][gx]) {
+
         return false;
+
       }
     }
   }
@@ -259,37 +420,50 @@ function valid(nx, ny, nr) {
 function draw() {
 
   active.forEach(
-    object => board.remove(object)
+    object =>
+      board.remove(object)
   );
 
   active = [];
 
-  const shape = rotated(
-    shapes[type],
-    rot
-  );
+  const shape =
+    rotated(
+      shapes[type],
+      rot
+    );
 
-  for (let y = 0; y < shape.length; y++) {
+  for (
+    let y = 0;
+    y < shape.length;
+    y++
+  ) {
 
-    for (let x = 0; x < shape[0].length; x++) {
+    for (
+      let x = 0;
+      x < shape[0].length;
+      x++
+    ) {
 
-      if (!shape[y][x]) continue;
+      if (!shape[y][x])
+        continue;
 
       const material =
         new THREE.MeshBasicMaterial({
           color: colors[type]
         });
 
-      const object = new THREE.Mesh(
-        new THREE.BoxGeometry(
-          CELL * 0.92,
-          CELL * 0.92,
-          0.06
-        ),
-        material
-      );
+      const object =
+        new THREE.Mesh(
+          new THREE.BoxGeometry(
+            CELL * 0.92,
+            CELL * 0.92,
+            0.06
+          ),
+          material
+        );
 
       object.position.set(
+
         (px + x) * CELL -
         (W * CELL) / 2 +
         CELL / 2,
@@ -299,9 +473,11 @@ function draw() {
         CELL / 2,
 
         0.035
+
       );
 
       board.add(object);
+
       active.push(object);
     }
   }
@@ -314,29 +490,37 @@ function draw() {
 
 function makePiece() {
 
-  type = Math.floor(
-    Math.random() * shapes.length
-  );
+  type =
+    Math.floor(
+      Math.random() *
+      shapes.length
+    );
 
   rot = 0;
 
-  const shape = shapes[type];
+  const shape =
+    shapes[type];
 
-  px = Math.floor(
-    (W - shape[0].length) / 2
-  );
+  px =
+    Math.floor(
+      (W - shape[0].length) / 2
+    );
 
-  py = H - shape.length;
+  py =
+    H - shape.length;
 
-  if (!valid(px, py, rot)) {
+  if (
+    !valid(
+      px,
+      py,
+      rot
+    )
+  ) {
 
     gameOver = true;
 
-    status.textContent = "GAME OVER";
-
-    placeBtn.textContent = "RESTART";
-
-    placeBtn.style.display = "block";
+    status.textContent =
+      "GAME OVER — TAP TO RESTART";
 
     return;
   }
@@ -351,19 +535,32 @@ function makePiece() {
 
 function lock() {
 
-  const shape = rotated(
-    shapes[type],
-    rot
-  );
+  const shape =
+    rotated(
+      shapes[type],
+      rot
+    );
 
-  for (let y = 0; y < shape.length; y++) {
+  for (
+    let y = 0;
+    y < shape.length;
+    y++
+  ) {
 
-    for (let x = 0; x < shape[0].length; x++) {
+    for (
+      let x = 0;
+      x < shape[0].length;
+      x++
+    ) {
 
-      if (!shape[y][x]) continue;
+      if (!shape[y][x])
+        continue;
 
-      const gx = px + x;
-      const gy = py + y;
+      const gx =
+        px + x;
+
+      const gy =
+        py + y;
 
       if (
         gx >= 0 &&
@@ -372,12 +569,15 @@ function lock() {
         gy < H
       ) {
 
-        grid[gy][gx] = colors[type];
+        grid[gy][gx] =
+          colors[type];
+
       }
     }
   }
 
   clearLines();
+
   makePiece();
 }
 
@@ -390,17 +590,27 @@ function clearLines() {
 
   let lines = 0;
 
-  for (let y = 0; y < H; y++) {
+  for (
+    let y = 0;
+    y < H;
+    y++
+  ) {
 
-    if (grid[y].every(Boolean)) {
+    if (
+      grid[y].every(Boolean)
+    ) {
 
-      grid.splice(y, 1);
+      grid.splice(
+        y,
+        1
+      );
 
       grid.push(
         Array(W).fill(null)
       );
 
       lines++;
+
       y--;
     }
   }
@@ -408,10 +618,13 @@ function clearLines() {
   if (lines > 0) {
 
     const score =
-      Number(scoreEl.textContent) || 0;
+      Number(
+        scoreEl.textContent
+      ) || 0;
 
     scoreEl.textContent =
-      score + lines * 100;
+      score +
+      lines * 100;
   }
 
   updateBoard();
@@ -424,12 +637,22 @@ function clearLines() {
 
 function updateBoard() {
 
-  for (let y = 0; y < H; y++) {
+  for (
+    let y = 0;
+    y < H;
+    y++
+  ) {
 
-    for (let x = 0; x < W; x++) {
+    for (
+      let x = 0;
+      x < W;
+      x++
+    ) {
 
       const cell =
-        cells[y * W + x];
+        cells[
+          y * W + x
+        ];
 
       if (grid[y][x]) {
 
@@ -437,7 +660,8 @@ function updateBoard() {
           grid[y][x]
         );
 
-        cell.material.opacity = 0.9;
+        cell.material.opacity =
+          0.9;
 
       } else {
 
@@ -445,7 +669,8 @@ function updateBoard() {
           0x222733
         );
 
-        cell.material.opacity = 0.42;
+        cell.material.opacity =
+          0.35;
       }
     }
   }
@@ -453,16 +678,26 @@ function updateBoard() {
 
 
 /* =========================
-   MOVE LEFT / RIGHT
+   MOVE
 ========================= */
 
 function move(dx) {
 
-  if (!placed || gameOver) return;
+  if (
+    !placed ||
+    gameOver
+  ) return;
 
-  if (valid(px + dx, py, rot)) {
+  if (
+    valid(
+      px + dx,
+      py,
+      rot
+    )
+  ) {
 
     px += dx;
+
     draw();
   }
 }
@@ -474,7 +709,10 @@ function move(dx) {
 
 function turn() {
 
-  if (!placed || gameOver) return;
+  if (
+    !placed ||
+    gameOver
+  ) return;
 
   const nextRotation =
     (rot + 1) % 4;
@@ -487,7 +725,9 @@ function turn() {
     )
   ) {
 
-    rot = nextRotation;
+    rot =
+      nextRotation;
+
     draw();
   }
 }
@@ -499,7 +739,10 @@ function turn() {
 
 function hardDrop() {
 
-  if (!placed || gameOver) return;
+  if (
+    !placed ||
+    gameOver
+  ) return;
 
   while (
     valid(
@@ -513,6 +756,7 @@ function hardDrop() {
   }
 
   draw();
+
   lock();
 }
 
@@ -523,81 +767,93 @@ function hardDrop() {
 
 function startGame() {
 
-  for (let y = 0; y < H; y++) {
+  for (
+    let y = 0;
+    y < H;
+    y++
+  ) {
 
-    for (let x = 0; x < W; x++) {
+    for (
+      let x = 0;
+      x < W;
+      x++
+    ) {
 
-      grid[y][x] = null;
+      grid[y][x] =
+        null;
     }
   }
 
-  scoreEl.textContent = "0";
+  scoreEl.textContent =
+    "0";
 
   updateBoard();
 
   gameOver = false;
 
-  placeBtn.style.display = "none";
-
   makePiece();
 
   clearInterval(timer);
 
-  timer = setInterval(() => {
+  timer =
+    setInterval(
+      () => {
 
-    if (!placed || gameOver) return;
+        if (
+          !placed ||
+          gameOver
+        ) return;
 
-    if (
-      valid(
-        px,
-        py - 1,
-        rot
-      )
-    ) {
+        if (
+          valid(
+            px,
+            py - 1,
+            rot
+          )
+        ) {
 
-      py--;
-      draw();
+          py--;
 
-    } else {
+          draw();
 
-      lock();
-    }
+        } else {
 
-  }, 650);
+          lock();
+
+        }
+
+      },
+      650
+    );
 }
 
 
 /* =========================
-   PLACE / RESTART
+   PLACE BY TAP
 ========================= */
 
-placeBtn.addEventListener(
-  "click",
-  () => {
+renderer.domElement.addEventListener(
+  "touchend",
+  event => {
 
-    if (gameOver) {
-
-      startGame();
-      return;
-    }
-
-    if (!placed) {
-
-      tracker.setAnchorPoseFromCameraOffset(
-        0,
-        0,
-        -3
-      );
+    if (
+      !placed &&
+      !gameOver
+    ) {
 
       placed = true;
 
-      placeBtn.style.display = "none";
-
       status.textContent =
-        "Swipe left/right • Tap to rotate • Swipe down to drop";
+        "TAP = ROTATE • SWIPE ← → = MOVE • SWIPE ↓ = DROP";
 
       startGame();
+
+      return;
     }
+
+  },
+  {
+    passive: true
   }
 );
 
@@ -607,10 +863,13 @@ placeBtn.addEventListener(
 ========================= */
 
 let touchStartX = 0;
+
 let touchStartY = 0;
+
 let touchStartTime = 0;
 
 const SWIPE_DISTANCE = 40;
+
 const TAP_TIME = 300;
 
 
@@ -618,17 +877,22 @@ renderer.domElement.addEventListener(
   "touchstart",
   event => {
 
-    if (!placed || gameOver) return;
-
     const touch =
       event.changedTouches[0];
 
-    touchStartX = touch.clientX;
-    touchStartY = touch.clientY;
-    touchStartTime = Date.now();
+    touchStartX =
+      touch.clientX;
+
+    touchStartY =
+      touch.clientY;
+
+    touchStartTime =
+      Date.now();
 
   },
-  {passive: true}
+  {
+    passive: true
+  }
 );
 
 
@@ -636,101 +900,150 @@ renderer.domElement.addEventListener(
   "touchend",
   event => {
 
-    if (!placed || gameOver) return;
+    if (
+      !placed ||
+      gameOver
+    ) return;
 
     const touch =
       event.changedTouches[0];
 
     const dx =
-      touch.clientX - touchStartX;
+      touch.clientX -
+      touchStartX;
 
     const dy =
-      touch.clientY - touchStartY;
+      touch.clientY -
+      touchStartY;
 
     const duration =
-      Date.now() - touchStartTime;
+      Date.now() -
+      touchStartTime;
 
     const distance =
       Math.sqrt(
-        dx * dx + dy * dy
+        dx * dx +
+        dy * dy
       );
 
 
     if (
-      distance < SWIPE_DISTANCE &&
-      duration < TAP_TIME
+      distance <
+      SWIPE_DISTANCE &&
+      duration <
+      TAP_TIME
     ) {
 
       turn();
+
       return;
     }
 
 
     if (
-      Math.abs(dx) > Math.abs(dy) &&
-      dx < -SWIPE_DISTANCE
+      Math.abs(dx) >
+      Math.abs(dy) &&
+      dx <
+      -SWIPE_DISTANCE
     ) {
 
       move(-1);
+
       return;
     }
 
 
     if (
-      Math.abs(dx) > Math.abs(dy) &&
-      dx > SWIPE_DISTANCE
+      Math.abs(dx) >
+      Math.abs(dy) &&
+      dx >
+      SWIPE_DISTANCE
     ) {
 
       move(1);
+
       return;
     }
 
 
     if (
-      Math.abs(dy) > Math.abs(dx) &&
-      dy > SWIPE_DISTANCE
+      Math.abs(dy) >
+      Math.abs(dx) &&
+      dy >
+      SWIPE_DISTANCE
     ) {
 
       hardDrop();
+
       return;
     }
 
   },
-  {passive: true}
+  {
+    passive: true
+  }
 );
 
 
 /* =========================
-   CAMERA
+   GAME OVER TAP
 ========================= */
 
-ZapparThree.permissionRequestUI()
-.then(granted => {
+renderer.domElement.addEventListener(
+  "touchend",
+  event => {
 
-  if (granted) {
+    if (
+      placed &&
+      gameOver
+    ) {
 
-    camera.start();
+      gameOver = false;
 
-    status.textContent =
-      "Point your phone at a wall, then tap PLACE";
+      startGame();
+    }
 
-  } else {
-
-    ZapparThree.permissionDeniedUI();
-
-    status.textContent =
-      "Camera permission is required";
+  },
+  {
+    passive: true
   }
+);
 
-})
-.catch(error => {
 
-  errorBox.hidden = false;
+/* =========================
+   CAMERA PERMISSION
+========================= */
 
-  errorBox.textContent =
-    "Camera startup failed.\n" +
-    error.message;
-});
+ZapparThree
+  .permissionRequestUI()
+  .then(granted => {
+
+    if (granted) {
+
+      camera.start();
+
+      status.textContent =
+        "Point your phone at a wall • TAP to place";
+
+    } else {
+
+      ZapparThree
+        .permissionDeniedUI();
+
+      status.textContent =
+        "Camera permission is required";
+    }
+
+  })
+  .catch(error => {
+
+    errorBox.hidden =
+      false;
+
+    errorBox.textContent =
+      "Camera startup failed.\n" +
+      error.message;
+  });
 
 
 /* =========================
@@ -739,7 +1052,17 @@ ZapparThree.permissionRequestUI()
 
 function render() {
 
-  camera.updateFrame(renderer);
+  camera.updateFrame(
+    renderer
+  );
+
+
+  /*
+     Before placement:
+     keep the Tetris preview
+     attached to the surface
+     directly in front of the camera.
+  */
 
   if (!placed) {
 
@@ -748,7 +1071,9 @@ function render() {
       0,
       -3
     );
+
   }
+
 
   renderer.render(
     scene,
@@ -756,7 +1081,10 @@ function render() {
   );
 }
 
-renderer.setAnimationLoop(render);
+
+renderer.setAnimationLoop(
+  render
+);
 
 
 /* =========================
@@ -771,5 +1099,6 @@ addEventListener(
       innerWidth,
       innerHeight
     );
+
   }
 );
