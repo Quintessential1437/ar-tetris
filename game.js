@@ -79,14 +79,12 @@ const scoreEl =
 ========================= */
 
 let placed = false;
-
 let gameOver = false;
-
 let timer = null;
 
 
 /* =========================
-   PORTAL WORLD
+   FLOATING TETRIS WORLD
 ========================= */
 
 const world =
@@ -109,19 +107,30 @@ world.add(board);
    TETRIS SETTINGS
 ========================= */
 
-const W = 10;
-
-const H = 20;
-
-
 /*
-   BIG BLOCKS
+   Smaller than the previous
+   version so the complete
+   game fits better in view.
 
-   The arena is intentionally
-   much larger than before.
+   10 x 20 = 1.8m x 3.6m
 */
 
-const CELL = 0.32;
+const W = 10;
+const H = 20;
+const CELL = 0.18;
+
+const BOARD_WIDTH =
+  W * CELL;
+
+const BOARD_HEIGHT =
+  H * CELL;
+
+
+/* =========================
+   BLOCK DEPTH
+========================= */
+
+const BLOCK_DEPTH = 0.22;
 
 
 /* =========================
@@ -202,234 +211,135 @@ const grid =
 
 
 /* =========================
-   PORTAL FRAME
+   TRANSPARENT GAME BORDER
 ========================= */
 
-const boardWidth =
-  W * CELL;
-
-const boardHeight =
-  H * CELL;
-
-
 /*
-   Main outer frame
+   IMPORTANT:
+
+   There is NO background
+   plane behind the game.
+
+   Only the border exists.
 */
 
-const frameDepth = 0.16;
-
-const frameMaterial =
+const borderMaterial =
   new THREE.MeshBasicMaterial({
     color: 0xffffff,
     transparent: true,
-    opacity: 0.85
+    opacity: 0.8
   });
 
 
-/*
-   Top frame
-*/
+/* =========================
+   TOP BORDER
+========================= */
 
-const topFrame =
+const topBorder =
   new THREE.Mesh(
     new THREE.BoxGeometry(
-      boardWidth + 0.20,
-      0.16,
-      frameDepth
+      BOARD_WIDTH + 0.10,
+      0.055,
+      0.055
     ),
-    frameMaterial
+    borderMaterial
   );
 
-topFrame.position.set(
+topBorder.position.set(
   0,
-  boardHeight / 2 + 0.08,
+  BOARD_HEIGHT / 2 + 0.025,
   0
 );
 
-board.add(topFrame);
-
-
-/*
-   Bottom frame
-*/
-
-const bottomFrame =
-  new THREE.Mesh(
-    new THREE.BoxGeometry(
-      boardWidth + 0.20,
-      0.16,
-      frameDepth
-    ),
-    frameMaterial
-  );
-
-bottomFrame.position.set(
-  0,
-  -boardHeight / 2 - 0.08,
-  0
-);
-
-board.add(bottomFrame);
-
-
-/*
-   Left frame
-*/
-
-const leftFrame =
-  new THREE.Mesh(
-    new THREE.BoxGeometry(
-      0.16,
-      boardHeight + 0.20,
-      frameDepth
-    ),
-    frameMaterial
-  );
-
-leftFrame.position.set(
-  -boardWidth / 2 - 0.08,
-  0,
-  0
-);
-
-board.add(leftFrame);
-
-
-/*
-   Right frame
-*/
-
-const rightFrame =
-  new THREE.Mesh(
-    new THREE.BoxGeometry(
-      0.16,
-      boardHeight + 0.20,
-      frameDepth
-    ),
-    frameMaterial
-  );
-
-rightFrame.position.set(
-  boardWidth / 2 + 0.08,
-  0,
-  0
-);
-
-board.add(rightFrame);
+board.add(topBorder);
 
 
 /* =========================
-   INNER PORTAL FRAME
+   BOTTOM BORDER
 ========================= */
 
-const innerFrameGeometry =
-  new THREE.EdgesGeometry(
-    new THREE.PlaneGeometry(
-      boardWidth,
-      boardHeight
-    )
-  );
-
-const innerFrameMaterial =
-  new THREE.LineBasicMaterial({
-    color: 0xffffff,
-    transparent: true,
-    opacity: 0.65
-  });
-
-const innerFrame =
-  new THREE.LineSegments(
-    innerFrameGeometry,
-    innerFrameMaterial
-  );
-
-innerFrame.position.z =
-  -0.09;
-
-board.add(innerFrame);
-
-
-/* =========================
-   BOARD CELLS
-========================= */
-
-const cells = [];
-
-for (
-  let y = 0;
-  y < H;
-  y++
-) {
-
-  for (
-    let x = 0;
-    x < W;
-    x++
-  ) {
-
-    const geometry =
-      new THREE.BoxGeometry(
-        CELL * 0.90,
-        CELL * 0.90,
-        0.08
-      );
-
-    const material =
-      new THREE.MeshBasicMaterial({
-        color: 0x111722,
-        transparent: true,
-        opacity: 0.30
-      });
-
-    const cell =
-      new THREE.Mesh(
-        geometry,
-        material
-      );
-
-    cell.position.set(
-
-      x * CELL -
-      boardWidth / 2 +
-      CELL / 2,
-
-      y * CELL -
-      boardHeight / 2 +
-      CELL / 2,
-
-      0
-
-    );
-
-    board.add(cell);
-
-    cells.push(cell);
-  }
-}
-
-
-/* =========================
-   PORTAL BACK PLANE
-========================= */
-
-const portalPlane =
+const bottomBorder =
   new THREE.Mesh(
-    new THREE.PlaneGeometry(
-      boardWidth,
-      boardHeight
+    new THREE.BoxGeometry(
+      BOARD_WIDTH + 0.10,
+      0.055,
+      0.055
     ),
-    new THREE.MeshBasicMaterial({
-      color: 0x050812,
-      transparent: true,
-      opacity: 0.18,
-      side: THREE.DoubleSide
-    })
+    borderMaterial
   );
 
-portalPlane.position.z =
-  -0.12;
+bottomBorder.position.set(
+  0,
+  -BOARD_HEIGHT / 2 - 0.025,
+  0
+);
 
-board.add(portalPlane);
+board.add(bottomBorder);
+
+
+/* =========================
+   LEFT BORDER
+========================= */
+
+const leftBorder =
+  new THREE.Mesh(
+    new THREE.BoxGeometry(
+      0.055,
+      BOARD_HEIGHT + 0.10,
+      0.055
+    ),
+    borderMaterial
+  );
+
+leftBorder.position.set(
+  -BOARD_WIDTH / 2 - 0.025,
+  0,
+  0
+);
+
+board.add(leftBorder);
+
+
+/* =========================
+   RIGHT BORDER
+========================= */
+
+const rightBorder =
+  new THREE.Mesh(
+    new THREE.BoxGeometry(
+      0.055,
+      BOARD_HEIGHT + 0.10,
+      0.055
+    ),
+    borderMaterial
+  );
+
+rightBorder.position.set(
+  BOARD_WIDTH / 2 + 0.025,
+  0,
+  0
+);
+
+board.add(rightBorder);
+
+
+/* =========================
+   NO BACKGROUND
+========================= */
+
+/*
+   IMPORTANT:
+
+   We intentionally do NOT
+   create a PlaneGeometry here.
+
+   There is absolutely
+   nothing behind the blocks.
+
+   The real world remains
+   visible through the entire
+   Tetris game.
+*/
 
 
 /* =========================
@@ -439,12 +349,50 @@ board.add(portalPlane);
 let active = [];
 
 let px = 3;
-
 let py = 0;
-
 let rot = 0;
-
 let type = 0;
+
+
+/* =========================
+   CREATE 3D BLOCK
+========================= */
+
+function createBlock(
+  color
+) {
+
+  /*
+     A real 3D cube.
+
+     Width  = CELL
+     Height = CELL
+     Depth  = BLOCK_DEPTH
+  */
+
+  const geometry =
+    new THREE.BoxGeometry(
+      CELL * 0.88,
+      CELL * 0.88,
+      BLOCK_DEPTH
+    );
+
+
+  const material =
+    new THREE.MeshBasicMaterial({
+      color: color
+    });
+
+
+  const block =
+    new THREE.Mesh(
+      geometry,
+      material
+    );
+
+
+  return block;
+}
 
 
 /* =========================
@@ -571,17 +519,28 @@ function valid(
 function draw() {
 
   active.forEach(
-    object =>
-      board.remove(object)
+    object => {
+      board.remove(object);
+
+      if (object.geometry) {
+        object.geometry.dispose();
+      }
+
+      if (object.material) {
+        object.material.dispose();
+      }
+    }
   );
 
   active = [];
+
 
   const shape =
     rotated(
       shapes[type],
       rot
     );
+
 
   for (
     let y = 0;
@@ -598,38 +557,116 @@ function draw() {
       if (!shape[y][x])
         continue;
 
-      const material =
-        new THREE.MeshBasicMaterial({
-          color: colors[type]
-        });
 
       const object =
-        new THREE.Mesh(
-          new THREE.BoxGeometry(
-            CELL * 0.90,
-            CELL * 0.90,
-            0.16
-          ),
-          material
+        createBlock(
+          colors[type]
         );
+
 
       object.position.set(
 
         (px + x) * CELL -
-        boardWidth / 2 +
+        BOARD_WIDTH / 2 +
         CELL / 2,
 
         (py + y) * CELL -
-        boardHeight / 2 +
+        BOARD_HEIGHT / 2 +
         CELL / 2,
 
-        0.08
+        0
 
       );
+
 
       board.add(object);
 
       active.push(object);
+    }
+  }
+}
+
+
+/* =========================
+   DRAW LOCKED BLOCKS
+========================= */
+
+function drawLockedBlocks() {
+
+  /*
+     Remove all existing
+     locked block meshes.
+
+     Active pieces are kept.
+  */
+
+  const lockedObjects =
+    board.children.filter(
+      object =>
+        object.userData &&
+        object.userData.locked
+    );
+
+
+  lockedObjects.forEach(
+    object => {
+
+      board.remove(object);
+
+      if (object.geometry) {
+        object.geometry.dispose();
+      }
+
+      if (object.material) {
+        object.material.dispose();
+      }
+
+    }
+  );
+
+
+  for (
+    let y = 0;
+    y < H;
+    y++
+  ) {
+
+    for (
+      let x = 0;
+      x < W;
+      x++
+    ) {
+
+      if (!grid[y][x])
+        continue;
+
+
+      const object =
+        createBlock(
+          grid[y][x]
+        );
+
+
+      object.userData.locked =
+        true;
+
+
+      object.position.set(
+
+        x * CELL -
+        BOARD_WIDTH / 2 +
+        CELL / 2,
+
+        y * CELL -
+        BOARD_HEIGHT / 2 +
+        CELL / 2,
+
+        0
+
+      );
+
+
+      board.add(object);
     }
   }
 }
@@ -652,13 +689,16 @@ function makePiece() {
   const shape =
     shapes[type];
 
+
   px =
     Math.floor(
       (W - shape[0].length) / 2
     );
 
+
   py =
     H - shape.length;
+
 
   if (
     !valid(
@@ -676,6 +716,7 @@ function makePiece() {
     return;
   }
 
+
   draw();
 }
 
@@ -692,6 +733,7 @@ function lock() {
       rot
     );
 
+
   for (
     let y = 0;
     y < shape.length;
@@ -707,11 +749,13 @@ function lock() {
       if (!shape[y][x])
         continue;
 
+
       const gx =
         px + x;
 
       const gy =
         py + y;
+
 
       if (
         gx >= 0 &&
@@ -722,14 +766,18 @@ function lock() {
 
         grid[gy][gx] =
           colors[type];
-
       }
     }
   }
 
+
   clearLines();
 
   makePiece();
+
+  drawLockedBlocks();
+
+  draw();
 }
 
 
@@ -740,6 +788,7 @@ function lock() {
 function clearLines() {
 
   let lines = 0;
+
 
   for (
     let y = 0;
@@ -766,6 +815,7 @@ function clearLines() {
     }
   }
 
+
   if (lines > 0) {
 
     const score =
@@ -773,59 +823,10 @@ function clearLines() {
         scoreEl.textContent
       ) || 0;
 
+
     scoreEl.textContent =
       score +
       lines * 100;
-  }
-
-  updateBoard();
-}
-
-
-/* =========================
-   UPDATE GRID
-========================= */
-
-function updateBoard() {
-
-  for (
-    let y = 0;
-    y < H;
-    y++
-  ) {
-
-    for (
-      let x = 0;
-      x < W;
-      x++
-    ) {
-
-      const cell =
-        cells[
-          y * W + x
-        ];
-
-      if (
-        grid[y][x]
-      ) {
-
-        cell.material.color.set(
-          grid[y][x]
-        );
-
-        cell.material.opacity =
-          0.95;
-
-      } else {
-
-        cell.material.color.set(
-          0x111722
-        );
-
-        cell.material.opacity =
-          0.30;
-      }
-    }
   }
 }
 
@@ -840,6 +841,7 @@ function move(dx) {
     !placed ||
     gameOver
   ) return;
+
 
   if (
     valid(
@@ -867,8 +869,10 @@ function turn() {
     gameOver
   ) return;
 
+
   const nextRotation =
     (rot + 1) % 4;
+
 
   if (
     valid(
@@ -897,6 +901,7 @@ function hardDrop() {
     gameOver
   ) return;
 
+
   while (
     valid(
       px,
@@ -907,6 +912,7 @@ function hardDrop() {
 
     py--;
   }
+
 
   draw();
 
@@ -937,16 +943,23 @@ function startGame() {
     }
   }
 
+
   scoreEl.textContent =
     "0";
 
-  updateBoard();
 
   gameOver = false;
 
+
   makePiece();
 
+  drawLockedBlocks();
+
+  draw();
+
+
   clearInterval(timer);
+
 
   timer =
     setInterval(
@@ -956,6 +969,7 @@ function startGame() {
           !placed ||
           gameOver
         ) return;
+
 
         if (
           valid(
@@ -981,7 +995,7 @@ function startGame() {
 
 
 /* =========================
-   PLACE FLOATING WORLD
+   PLACE FLOATING TETRIS
 ========================= */
 
 placeBtn.addEventListener(
@@ -995,15 +1009,16 @@ placeBtn.addEventListener(
       return;
     }
 
+
     if (!placed) {
 
       /*
-         Place the Tetris world
-         about 5 metres in front
-         of the phone.
+         The Tetris game is
+         placed several metres
+         in front of the camera.
 
-         This creates a large
-         floating AR arena.
+         It is NOT attached
+         to a wall.
       */
 
       tracker.setAnchorPoseFromCameraOffset(
@@ -1012,13 +1027,17 @@ placeBtn.addEventListener(
         -5
       );
 
+
       placed = true;
+
 
       placeBtn.style.display =
         "none";
 
+
       status.textContent =
-        "TAP = ROTATE • SWIPE = MOVE • WALK AROUND THE TETRIS";
+        "TAP = ROTATE • SWIPE = MOVE • WALK AROUND THE GAME";
+
 
       startGame();
     }
@@ -1036,6 +1055,7 @@ let touchStartY = 0;
 
 let touchStartTime = 0;
 
+
 const SWIPE_DISTANCE = 40;
 
 const TAP_TIME = 300;
@@ -1047,6 +1067,7 @@ renderer.domElement.addEventListener(
 
     const touch =
       event.changedTouches[0];
+
 
     touchStartX =
       touch.clientX;
@@ -1068,8 +1089,15 @@ renderer.domElement.addEventListener(
   "touchend",
   event => {
 
+    if (
+      !placed ||
+      gameOver
+    ) return;
+
+
     const touch =
       event.changedTouches[0];
+
 
     const dx =
       touch.clientX -
@@ -1079,9 +1107,11 @@ renderer.domElement.addEventListener(
       touch.clientY -
       touchStartY;
 
+
     const duration =
       Date.now() -
       touchStartTime;
+
 
     const distance =
       Math.sqrt(
@@ -1091,48 +1121,8 @@ renderer.domElement.addEventListener(
 
 
     /*
-       Before placement:
-
-       A tap places the
-       floating Tetris world.
-    */
-
-    if (
-      !placed &&
-      !gameOver &&
-      distance < SWIPE_DISTANCE &&
-      duration < TAP_TIME
-    ) {
-
-      tracker.setAnchorPoseFromCameraOffset(
-        0,
-        0,
-        -5
-      );
-
-      placed = true;
-
-      placeBtn.style.display =
-        "none";
-
-      status.textContent =
-        "TAP = ROTATE • SWIPE = MOVE • WALK AROUND THE TETRIS";
-
-      startGame();
-
-      return;
-    }
-
-
-    if (
-      !placed ||
-      gameOver
-    ) return;
-
-
-    /*
-       Tap
-       = rotate
+       TAP
+       Rotate
     */
 
     if (
@@ -1149,7 +1139,7 @@ renderer.domElement.addEventListener(
 
 
     /*
-       Swipe left
+       SWIPE LEFT
     */
 
     if (
@@ -1166,7 +1156,7 @@ renderer.domElement.addEventListener(
 
 
     /*
-       Swipe right
+       SWIPE RIGHT
     */
 
     if (
@@ -1183,8 +1173,7 @@ renderer.domElement.addEventListener(
 
 
     /*
-       Swipe down
-       = hard drop
+       SWIPE DOWN
     */
 
     if (
@@ -1219,13 +1208,15 @@ ZapparThree
 
         camera.start();
 
+
         status.textContent =
-          "Move your phone around • TAP ENTER TETRIS";
+          "Move your phone around, then tap ENTER TETRIS";
 
       } else {
 
         ZapparThree
           .permissionDeniedUI();
+
 
         status.textContent =
           "Camera permission is required";
@@ -1238,6 +1229,7 @@ ZapparThree
 
       errorBox.hidden =
         false;
+
 
       errorBox.textContent =
         "Camera startup failed.\n" +
@@ -1256,13 +1248,12 @@ function render() {
     renderer
   );
 
-  /*
-     Before placement the
-     floating world follows
-     the camera.
 
-     After placement it stays
-     locked in the environment.
+  /*
+     Before placement,
+     keep the preview at
+     a fixed point in front
+     of the camera.
   */
 
   if (!placed) {
@@ -1273,6 +1264,7 @@ function render() {
       -5
     );
   }
+
 
   renderer.render(
     scene,
@@ -1298,6 +1290,5 @@ addEventListener(
       innerWidth,
       innerHeight
     );
-
   }
 );
