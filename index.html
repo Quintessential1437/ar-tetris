@@ -1,31 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
+
+<meta
+  name="viewport"
+  content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover"
+>
 
 <title>AR Tetris</title>
 
 <link rel="stylesheet" href="style.css">
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
 <script src="https://libs.zappar.com/zappar-threejs/2.4.6/zappar-threejs.js"></script>
+
 </head>
 
 <body>
 
 <div id="hud">
+
   <div>
     <b>AR TETRIS</b>
-    <span id="status">Point your phone at a wall</span>
+    <span id="status">
+      Point your phone at a wall
+    </span>
   </div>
 
   <div>
     Score <b id="score">0</b>
   </div>
-</div>
 
-<button id="place">TAP TO PLACE</button>
+</div>
 
 <div id="error" hidden></div>
 
